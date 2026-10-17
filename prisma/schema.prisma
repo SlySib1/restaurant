@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Dish {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  price       Float
+  category    String
+  imageUrl    String?
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  chefs       Chef[]       @relation("DishChefs")
+  ingredients Ingredient[] @relation("DishIngredients")
+}
+
+model Chef {
+  id        Int      @id @default(autoincrement())
+  name      String
+  specialty String
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  dishes    Dish[]   @relation("DishChefs")
+}
+
+model Ingredient {
+  id        Int      @id @default(autoincrement())
+  name      String
+  unit      String
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  dishes    Dish[]   @relation("DishIngredients")
+}

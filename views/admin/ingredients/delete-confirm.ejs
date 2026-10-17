@@ -1,0 +1,21 @@
+<%- include('../../partials/header', { title: 'Xóa nguyên liệu' }) %>
+<section class="panel confirm-panel">
+  <p class="eyebrow">Xác nhận thao tác</p>
+  <h1>Xóa nguyên liệu?</h1>
+  <p>Bạn có chắc muốn xóa <strong><%= ingredient.name %></strong>? Vì nguyên liệu này thuộc công thức, các món sử dụng nó cũng sẽ bị xóa.</p>
+
+  <% if (affectedDishes.length > 0) { %>
+    <div class="error-box">
+      <strong><%= affectedDishes.length %> món sẽ bị xóa:</strong>
+      <ul><% affectedDishes.forEach(dish => { %><li><%= dish.name %></li><% }) %></ul>
+    </div>
+  <% } else { %>
+    <p class="badge">Không có món nào sử dụng nguyên liệu này.</p>
+  <% } %>
+
+  <form action="/admin/ingredients/<%= ingredient.id %>?_method=DELETE" method="POST" class="button-row">
+    <button class="button-danger" type="submit">Xác nhận xóa nguyên liệu</button>
+    <a class="button button-secondary" href="/admin/ingredients">Hủy</a>
+  </form>
+</section>
+<%- include('../../partials/footer') %>

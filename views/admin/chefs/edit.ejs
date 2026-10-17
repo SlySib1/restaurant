@@ -1,0 +1,24 @@
+<%- include('../../partials/header', { title: 'Sửa đầu bếp' }) %>
+<p class="eyebrow">Cập nhật đội ngũ</p>
+<h1>Sửa đầu bếp</h1>
+<p class="page-intro">Mã bản ghi #<%= chef.id %> · Chỉnh sửa thông tin và hình ảnh đầu bếp.</p>
+
+<% if (errors.length > 0) { %>
+  <div class="error-box"><% errors.forEach(err => { %><p><%= err %></p><% }) %></div>
+<% } %>
+
+<section class="panel">
+  <form action="/admin/chefs/<%= chef.id %>?_method=PATCH" method="POST" enctype="multipart/form-data" class="form-stack">
+    <div class="field"><label for="name">Tên đầu bếp</label><input id="name" type="text" name="name" value="<%= chef.name %>" required></div>
+    <div class="field"><label for="specialty">Chuyên môn</label><input id="specialty" type="text" name="specialty" value="<%= chef.specialty %>" required></div>
+    <div class="field">
+      <label for="image">Ảnh đầu bếp</label>
+      <input id="image" type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif" data-image-input>
+      <span class="hint">Chọn ảnh mới để thay thế ảnh hiện tại. JPEG, PNG, WebP hoặc GIF · tối đa 5 MB</span>
+      <img class="image-preview" data-image-preview src="<%= chef.imageUrl || '' %>" alt="Ảnh đầu bếp" <%= chef.imageUrl ? '' : 'hidden' %>>
+      <% if (chef.imageUrl) { %><label class="check-row"><input type="checkbox" name="removeImage" value="on"> Xóa ảnh hiện tại</label><% } %>
+    </div>
+    <div class="button-row"><button type="submit">Lưu thay đổi</button><a class="button button-secondary" href="/admin/chefs">Quay lại</a></div>
+  </form>
+</section>
+<%- include('../../partials/footer') %>

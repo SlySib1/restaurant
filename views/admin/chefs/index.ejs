@@ -1,0 +1,50 @@
+<%- include('../../partials/header', { title: 'Quản lý đầu bếp' }) %>
+<p class="eyebrow">Khu vực quản trị</p>
+<h1>Đội ngũ đầu bếp</h1>
+<p class="page-intro">Giới thiệu những người đứng sau từng hương vị và lưu lại hình ảnh của đội ngũ.</p>
+
+<% if (errors.length > 0) { %>
+  <div class="error-box"><% errors.forEach(err => { %><p><%= err %></p><% }) %></div>
+<% } %>
+
+<div class="admin-grid">
+  <section class="panel">
+    <h2>Thêm đầu bếp</h2>
+    <form action="/admin/chefs" method="POST" enctype="multipart/form-data" class="form-stack">
+      <div class="field"><label for="name">Tên đầu bếp</label><input id="name" type="text" name="name" value="<%= formData.name || '' %>" required></div>
+      <div class="field"><label for="specialty">Chuyên môn</label><input id="specialty" type="text" name="specialty" value="<%= formData.specialty || '' %>" required></div>
+      <div class="field">
+        <label for="image">Ảnh đầu bếp</label>
+        <input id="image" type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif" data-image-input>
+        <span class="hint">JPEG, PNG, WebP hoặc GIF · tối đa 5 MB</span>
+        <img class="image-preview" data-image-preview alt="Xem trước ảnh đầu bếp" hidden>
+      </div>
+      <button type="submit">Thêm đầu bếp</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div class="section-heading"><div><h2>Danh sách đầu bếp</h2><p><%= chefs.length %> thành viên</p></div></div>
+    <% if (chefs.length === 0) { %>
+      <div class="empty-state">Chưa có đầu bếp nào trong danh sách.</div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>STT</th><th>Ảnh</th><th>Tên đầu bếp</th><th>Chuyên môn</th><th>Món có thể chế biến</th><th>Hành động</th></tr></thead>
+          <tbody>
+            <% chefs.forEach((chef, index) => { %>
+              <tr>
+                <td class="row-number"><%= index + 1 %></td>
+                <td><% if (chef.imageUrl) { %><img class="table-thumb" src="<%= chef.imageUrl %>" alt="<%= chef.name %>"><% } else { %><div class="table-thumb image-placeholder" aria-label="Chưa có ảnh">Bếp</div><% } %></td>
+                <td><strong><%= chef.name %></strong></td><td><%= chef.specialty %></td>
+                <td><%= chef.dishes.map(dish => dish.name).join(', ') || 'Chưa phân công' %></td>
+                <td class="actions"><a href="/admin/chefs/<%= chef.id %>/edit">Sửa</a><a href="/admin/chefs/<%= chef.id %>/delete">Xóa</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+</div>
+<%- include('../../partials/footer') %>

@@ -1,0 +1,41 @@
+<%- include('../partials/header', { title: 'Thực đơn' }) %>
+<section class="hero">
+  <div>
+    <p class="eyebrow">Món ngon mỗi ngày</p>
+    <h1>Hương vị nhà, nâng niu từng bữa ăn.</h1>
+    <p>Khám phá thực đơn được chuẩn bị từ nguyên liệu tươi ngon và sự chăm chút của căn bếp.</p>
+  </div>
+  <div class="hero-art" aria-hidden="true"></div>
+</section>
+
+<div class="section-heading">
+  <div><p class="eyebrow">Từ căn bếp của chúng tôi</p><h2>Thực đơn hôm nay</h2></div>
+  <p><%= dishes.length %> món ăn</p>
+</div>
+<form class="search-form" action="/dishes" method="GET">
+  <input type="text" name="q" value="<%= q %>" placeholder="Tìm tên món ăn..." aria-label="Tìm tên món ăn">
+  <button type="submit">Tìm món</button>
+</form>
+
+<% if (dishes.length === 0) { %>
+  <div class="panel empty-state">Không tìm thấy món ăn phù hợp. Hãy thử từ khóa khác nhé.</div>
+<% } else { %>
+  <div class="dish-grid">
+    <% dishes.forEach(dish => { %>
+      <article class="dish-card">
+        <a href="/dishes/<%= dish.id %>" aria-label="Xem món <%= dish.name %>">
+          <% if (dish.imageUrl) { %><img class="image-preview" src="<%= dish.imageUrl %>" alt="<%= dish.name %>">
+          <% } else { %><div class="image-preview image-placeholder" aria-label="Chưa có ảnh">Bếp Nhà</div><% } %>
+        </a>
+        <div class="dish-card-body">
+          <p class="eyebrow"><%= dish.category %></p>
+          <h2><a href="/dishes/<%= dish.id %>"><%= dish.name %></a></h2>
+          <p class="price"><%= dish.price.toLocaleString('vi-VN') %> ₫</p>
+          <% if (dish.chefs.length > 0) { %><p>Đầu bếp: <%= dish.chefs.map(chef => chef.name).join(', ') %></p><% } %>
+          <p><span class="badge <%= dish.available ? '' : 'badge-unavailable' %>"><%= dish.available ? 'Đang phục vụ' : 'Tạm hết' %></span></p>
+        </div>
+      </article>
+    <% }) %>
+  </div>
+<% } %>
+<%- include('../partials/footer') %>

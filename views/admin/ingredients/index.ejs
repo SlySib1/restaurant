@@ -1,0 +1,50 @@
+<%- include('../../partials/header', { title: 'Quản lý nguyên liệu' }) %>
+<p class="eyebrow">Khu vực quản trị</p>
+<h1>Nguyên liệu tươi ngon</h1>
+<p class="page-intro">Theo dõi danh sách nguyên liệu, đơn vị tính và hình ảnh để quản lý kho trực quan hơn.</p>
+
+<% if (errors.length > 0) { %>
+  <div class="error-box"><% errors.forEach(err => { %><p><%= err %></p><% }) %></div>
+<% } %>
+
+<div class="admin-grid">
+  <section class="panel">
+    <h2>Thêm nguyên liệu</h2>
+    <form action="/admin/ingredients" method="POST" enctype="multipart/form-data" class="form-stack">
+      <div class="field"><label for="name">Tên nguyên liệu</label><input id="name" type="text" name="name" value="<%= formData.name || '' %>" required></div>
+      <div class="field"><label for="unit">Đơn vị tính</label><input id="unit" type="text" name="unit" value="<%= formData.unit || '' %>" required></div>
+      <div class="field">
+        <label for="image">Ảnh nguyên liệu</label>
+        <input id="image" type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif" data-image-input>
+        <span class="hint">JPEG, PNG, WebP hoặc GIF · tối đa 5 MB</span>
+        <img class="image-preview" data-image-preview alt="Xem trước ảnh nguyên liệu" hidden>
+      </div>
+      <button type="submit">Thêm nguyên liệu</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div class="section-heading"><div><h2>Danh sách nguyên liệu</h2><p><%= ingredients.length %> nguyên liệu</p></div></div>
+    <% if (ingredients.length === 0) { %>
+      <div class="empty-state">Chưa có nguyên liệu nào trong danh sách.</div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>STT</th><th>Ảnh</th><th>Tên nguyên liệu</th><th>Đơn vị tính</th><th>Món sử dụng</th><th>Hành động</th></tr></thead>
+          <tbody>
+            <% ingredients.forEach((ingredient, index) => { %>
+              <tr>
+                <td class="row-number"><%= index + 1 %></td>
+                <td><% if (ingredient.imageUrl) { %><img class="table-thumb" src="<%= ingredient.imageUrl %>" alt="<%= ingredient.name %>"><% } else { %><div class="table-thumb image-placeholder" aria-label="Chưa có ảnh">Bếp</div><% } %></td>
+                <td><strong><%= ingredient.name %></strong></td><td><%= ingredient.unit %></td>
+                <td><%= ingredient.dishes.map(dish => dish.name).join(', ') || 'Chưa sử dụng' %></td>
+                <td class="actions"><a href="/admin/ingredients/<%= ingredient.id %>/edit">Sửa</a><a href="/admin/ingredients/<%= ingredient.id %>/delete">Xóa</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+</div>
+<%- include('../../partials/footer') %>
