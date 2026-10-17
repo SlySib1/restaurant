@@ -1,3 +1,10 @@
 node_modules/
 .env
-public/uploads/
+.env.*
+!.env.example
+public/uploads/*
+!public/uploads/
+!public/uploads/dish-*.jpg
+!public/uploads/chef-*.jpg
+!public/uploads/ingredient-*.jpg
+!public/uploads/attribution.json
