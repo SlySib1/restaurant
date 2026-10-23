@@ -58,7 +58,7 @@ async function matchesImageType(file) {
   }
 }
 
-async function validateUploadedImage(req, res, next) {
+async function validateUploadedImage(req, res, next, json = false) {
   if (!req.file) return next();
 
   let validImage;
@@ -71,12 +71,22 @@ async function validateUploadedImage(req, res, next) {
 
   if (!validImage) {
     await deleteImage(imageUrlForUpload(req.file));
+    if (json) {
+      return res.status(400).json({
+        ok: false,
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: 'Tệp tải lên không hợp lệ.',
+          fields: { image: 'Nội dung tệp không đúng định dạng ảnh đã chọn.' }
+        }
+      });
+    }
     return res.status(400).send('Nội dung tệp không đúng định dạng ảnh đã chọn.');
   }
   return next();
 }
 
-function handleUpload(req, res, next) {
+function handleUpload(req, res, next, json = false) {
   upload.single('image')(req, res, (error) => {
     if (error) {
       const isTooLarge = error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE';
@@ -85,10 +95,28 @@ function handleUpload(req, res, next) {
         : error instanceof multer.MulterError
           ? 'Không thể tải ảnh lên. Vui lòng chỉ chọn một ảnh.'
           : error.message;
+      if (json) {
+        return res.status(400).json({
+          ok: false,
+          error: {
+            code: 'VALIDATION_FAILED',
+            message,
+            fields: { image: message }
+          }
+        });
+      }
       return res.status(isTooLarge ? 413 : 400).send(message);
     }
-    return validateUploadedImage(req, res, next).catch(next);
+    return validateUploadedImage(req, res, next, json).catch(next);
   });
+}
+
+function uploadImage(req, res, next) {
+  return handleUpload(req, res, next);
+}
+
+function uploadImageApi(req, res, next) {
+  return handleUpload(req, res, next, true);
 }
 
 async function deleteImage(imageUrl) {
@@ -104,4 +132,4 @@ async function deleteImage(imageUrl) {
   }
 }
 
-module.exports = { uploadImage: handleUpload, imageUrlForUpload, deleteImage };
+module.exports = { uploadImage, uploadImageApi, imageUrlForUpload, deleteImage };

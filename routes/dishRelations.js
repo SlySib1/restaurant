@@ -2,9 +2,12 @@ function parseIds(value) {
   if (value === undefined) return [];
   const values = Array.isArray(value) ? value : [value];
   const ids = values.map((item) => {
-    if (!/^[1-9]\d*$/.test(item)) return null;
+    if (typeof item !== 'number' && (typeof item !== 'string' || !/^[1-9]\d*$/.test(item))) {
+      return null;
+    }
     const id = Number(item);
-    return Number.isSafeInteger(id) ? id : null;
+    if (!Number.isSafeInteger(id) || id <= 0) return null;
+    return id;
   });
 
   if (ids.some((id) => id === null)) return null;

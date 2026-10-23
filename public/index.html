@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#315d42">
+    <meta name="description" content="Thực đơn và quản trị nhà hàng Bếp Nhà">
+    <title>Bếp Nhà · Nhà hàng</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/spa.css">
+    <script src="/runtime-config.js"></script>
+    <script type="module" src="/js/spa.js"></script>
+  </head>
+  <body>
+    <header class="site-nav">
+      <a class="brand" href="/dishes" data-link>Bếp<span>Nhà</span></a>
+      <nav class="nav-links" aria-label="Điều hướng chính">
+        <a href="/dishes" data-link>Thực đơn</a>
+        <a href="/admin/dishes" data-link>Món ăn</a>
+        <a href="/admin/chefs" data-link>Đầu bếp</a>
+        <a href="/admin/ingredients" data-link>Nguyên liệu</a>
+      </nav>
+    </header>
+    <main id="app-main" class="page-shell" tabindex="-1"></main>
+    <div id="app-toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <footer class="site-footer">Bếp Nhà · Nấu bằng sự tử tế, phục vụ bằng cả tấm lòng.</footer>
+  </body>
+</html>
