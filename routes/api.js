@@ -2,6 +2,12 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { uploadImageApi, imageUrlForUpload, deleteImage } = require('./imageUpload');
 const { parseIds, loadDishOptions, relationsAreValid } = require('./dishRelations');
+const {
+  readDishFilters,
+  readBasicFilters,
+  listDishes,
+  listRelated
+} = require('./catalogSearch');
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -132,13 +138,9 @@ function validateDishRelations(chefIds, ingredientIds, options) {
 }
 
 router.get('/dishes', asyncRoute(async (req, res) => {
-  const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
-  const dishes = await prisma.dish.findMany({
-    where: query ? { name: { contains: query, mode: 'insensitive' } } : undefined,
-    include: dishIncludes,
-    orderBy: { id: 'desc' }
-  });
-  return sendData(res, dishes);
+  const parsed = readDishFilters(req.query);
+  if (parsed.error) throw new ApiError(400, 'VALIDATION_FAILED', parsed.error);
+  return sendData(res, await listDishes(prisma, parsed.value));
 }));
 
 router.get('/dishes/:id', asyncRoute(async (req, res) => {
@@ -251,11 +253,9 @@ router.delete('/dishes/:id', asyncRoute(async (req, res) => {
 }));
 
 router.get('/chefs', asyncRoute(async (req, res) => {
-  const chefs = await prisma.chef.findMany({
-    include: { dishes: true },
-    orderBy: { id: 'desc' }
-  });
-  return sendData(res, chefs);
+  const parsed = readBasicFilters(req.query);
+  if (parsed.error) throw new ApiError(400, 'VALIDATION_FAILED', parsed.error);
+  return sendData(res, await listRelated(prisma, 'chef', parsed.value));
 }));
 
 router.get('/chefs/:id', asyncRoute(async (req, res) => {
@@ -367,11 +367,9 @@ router.delete('/chefs/:id', asyncRoute(async (req, res) => {
 }));
 
 router.get('/ingredients', asyncRoute(async (req, res) => {
-  const ingredients = await prisma.ingredient.findMany({
-    include: { dishes: true },
-    orderBy: { id: 'desc' }
-  });
-  return sendData(res, ingredients);
+  const parsed = readBasicFilters(req.query);
+  if (parsed.error) throw new ApiError(400, 'VALIDATION_FAILED', parsed.error);
+  return sendData(res, await listRelated(prisma, 'ingredient', parsed.value));
 }));
 
 router.get('/ingredients/:id', asyncRoute(async (req, res) => {

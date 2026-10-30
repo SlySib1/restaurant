@@ -3,6 +3,10 @@ const toast = document.querySelector('#app-toast');
 const apiRoot = `${(window.APP_CONFIG?.apiBaseUrl || window.location.origin).replace(/\/+$/, '')}/api`;
 let routeVersion = 0;
 let toastTimer;
+let listObserver;
+let activeList;
+const listPageSize = 24;
+const listRestoreMaximum = 1008;
 
 class ApiError extends Error {
   constructor(status, payload) {
@@ -141,6 +145,235 @@ function navigate(path, { replace = false } = {}) {
   renderRoute();
 }
 
+function currentListState(query, resource) {
+  const parsedPage = Number(query.get('page') || 1);
+  return {
+    q: query.get('q') || '',
+    mode: resource === 'dishes' ? (query.get('mode') || 'basic') : 'basic',
+    category: query.get('category') || '',
+    minPrice: query.get('minPrice') || '',
+    maxPrice: query.get('maxPrice') || '',
+    available: query.get('available') || '',
+    sort: query.get('sort') || 'id_desc',
+    pageSize: listPageSize,
+    page: Number.isSafeInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1
+  };
+}
+
+function paginationFor(resource) {
+  if (resource === 'chefs') return 'more';
+  if (resource === 'ingredients') return 'infinite';
+  return 'pages';
+}
+
+function paginationLabel(resource) {
+  return ({
+    dishes: 'Số trang',
+    chefs: 'Tải thêm',
+    ingredients: 'Cuộn vô hạn'
+  })[resource];
+}
+
+function listUrl(pathname, state, page = 1) {
+  const params = new URLSearchParams();
+  if (state.q) params.set('q', state.q);
+  if (state.mode !== 'basic') params.set('mode', state.mode);
+  if (state.category) params.set('category', state.category);
+  if (state.minPrice) params.set('minPrice', state.minPrice);
+  if (state.maxPrice) params.set('maxPrice', state.maxPrice);
+  if (state.available) params.set('available', state.available);
+  if (state.sort !== 'id_desc') params.set('sort', state.sort);
+  if (page > 1) params.set('page', String(page));
+  const search = params.toString();
+  return search ? `${pathname}?${search}` : pathname;
+}
+
+function listApiUrl(resource, state, page, pageSize) {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+  if (state.q) params.set('q', state.q);
+  if (resource === 'dishes') {
+    params.set('mode', state.mode);
+    if (state.category) params.set('category', state.category);
+    if (state.minPrice) params.set('minPrice', state.minPrice);
+    if (state.maxPrice) params.set('maxPrice', state.maxPrice);
+    if (state.available) params.set('available', state.available);
+  }
+  if (state.sort !== 'id_desc') params.set('sort', state.sort);
+  return `/${resource}?${params.toString()}`;
+}
+
+function catalogForm(resource, state, categories = []) {
+  const dishList = resource === 'dishes';
+  const rankedSearch = dishList && ['fulltext', 'fuzzy'].includes(state.mode);
+  const searchDescription = state.mode === 'advanced'
+    ? 'Tìm một phần tên và kết hợp từ khóa, danh mục, khoảng giá, trạng thái bằng điều kiện AND.'
+    : state.mode === 'fulltext'
+      ? 'PostgreSQL tìm trong tên và mô tả bằng cấu hình simple; hỗ trợ từ khóa có hoặc không dấu.'
+      : state.mode === 'fuzzy'
+        ? 'Tìm tên gần giống với pg_trgm, ngưỡng similarity 0.3; hỗ trợ từ khóa có hoặc không dấu.'
+        : 'Tìm chuỗi con trong tên không phân biệt hoa/thường, có hoặc không dấu.';
+  return `
+    <form class="catalog-filters panel" data-catalog-form data-resource="${resource}">
+      <div class="filter-grid">
+        <label class="field">
+          <span class="field-label">Từ khóa</span>
+          <input type="search" name="q" value="${escapeHtml(state.q)}" placeholder="Tên ${escapeHtml(resourceLabel(resource))}..." maxlength="200" ${rankedSearch ? 'required' : ''}>
+        </label>
+        ${dishList ? `
+          <label class="field">
+            <span class="field-label">Kiểu tìm kiếm</span>
+            <select name="mode">
+              <option value="basic" ${state.mode === 'basic' ? 'selected' : ''}>Basic · một phần tên</option>
+              <option value="advanced" ${state.mode === 'advanced' ? 'selected' : ''}>Advanced · AND bộ lọc</option>
+              <option value="fulltext" ${state.mode === 'fulltext' ? 'selected' : ''}>Full-text · tên và mô tả</option>
+              <option value="fuzzy" ${state.mode === 'fuzzy' ? 'selected' : ''}>Fuzzy · gần giống (0.3)</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field-label">Danh mục</span>
+            <select name="category">
+              <option value="">Tất cả danh mục</option>
+              ${categories.map((category) => `<option value="${escapeHtml(category)}" ${state.category === category ? 'selected' : ''}>${escapeHtml(category)}</option>`).join('')}
+            </select>
+          </label>
+          <label class="field">
+            <span class="field-label">Giá từ</span>
+            <input type="number" name="minPrice" min="0" step="1000" value="${escapeHtml(state.minPrice)}">
+          </label>
+          <label class="field">
+            <span class="field-label">Giá đến</span>
+            <input type="number" name="maxPrice" min="0" step="1000" value="${escapeHtml(state.maxPrice)}">
+          </label>
+          <label class="field">
+            <span class="field-label">Trạng thái</span>
+            <select name="available">
+              <option value="">Tất cả</option>
+              <option value="true" ${state.available === 'true' ? 'selected' : ''}>Còn bán</option>
+              <option value="false" ${state.available === 'false' ? 'selected' : ''}>Tạm hết</option>
+            </select>
+          </label>` : ''}
+        ${rankedSearch
+          ? '<p class="hint relevance-note">Thứ tự kết quả được xếp theo điểm liên quan giảm dần, ID tăng dần.</p>'
+          : `<label class="field">
+          <span class="field-label">Sắp xếp</span>
+          <select name="sort">
+            <option value="id_desc" ${state.sort === 'id_desc' ? 'selected' : ''}>Mới cập nhật</option>
+            <option value="name_asc" ${state.sort === 'name_asc' ? 'selected' : ''}>Tên A → Z</option>
+            <option value="name_desc" ${state.sort === 'name_desc' ? 'selected' : ''}>Tên Z → A</option>
+            ${dishList ? `
+              <option value="price_asc" ${state.sort === 'price_asc' ? 'selected' : ''}>Giá tăng dần</option>
+              <option value="price_desc" ${state.sort === 'price_desc' ? 'selected' : ''}>Giá giảm dần</option>` : ''}
+        </select>
+        </label>`}
+      </div>
+      <p class="hint">${dishList
+        ? `${searchDescription} Tìm kiếm và lọc trên toàn bộ danh sách món ở server trước khi phân trang.`
+        : `Tìm kiếm và sắp xếp trên toàn bộ danh sách ${escapeHtml(resourceLabel(resource))} ở server trước khi phân trang.`}
+        Có thể nhập từ khóa tiếng Việt không dấu. Kết quả có ảnh thật được ưu tiên lên đầu. Danh sách này dùng phân trang kiểu <strong>${paginationLabel(resource)}</strong>.</p>
+      <div class="button-row">
+        <button type="submit">Áp dụng</button>
+        <a class="button button-secondary" href="${escapeHtml(listUrl(window.location.pathname, { ...state, q: '', mode: 'basic', category: '', minPrice: '', maxPrice: '', available: '', sort: 'id_desc' }))}" data-link>Xóa điều kiện</a>
+      </div>
+    </form>`;
+}
+
+function listPaginationMarkup(resource, state, page, totalPages, total, loadedCount) {
+  const pagination = paginationFor(resource);
+  if (pagination !== 'pages') {
+    const hasMore = loadedCount < total;
+    if (!hasMore) return '<p class="hint">Đã hiển thị toàn bộ kết quả.</p>';
+    return `
+      <div class="load-more-area">
+        ${pagination === 'more'
+          ? `<button type="button" data-load-more ${activeList?.loading ? 'disabled' : ''}>Tải thêm</button>`
+          : ''}
+        <span class="hint">${loadedCount} / ${total} kết quả</span>
+        ${pagination === 'infinite'
+          ? '<div class="infinite-sentinel" data-infinite-sentinel aria-hidden="true"></div>'
+          : ''}
+      </div>`;
+  }
+  if (totalPages <= 1) return '';
+
+  const first = Math.max(1, page - 2);
+  const last = Math.min(totalPages, page + 2);
+  const pages = [];
+  if (first > 1) pages.push(1, ...(first > 2 ? ['ellipsis'] : []));
+  for (let number = first; number <= last; number += 1) pages.push(number);
+  if (last < totalPages) pages.push(...(last < totalPages - 1 ? ['ellipsis'] : []), totalPages);
+
+  return `
+    <nav class="pagination" aria-label="Phân trang">
+      <a class="button button-secondary" href="${escapeHtml(listUrl(window.location.pathname, state, Math.max(1, page - 1)))}" data-link ${page <= 1 ? 'aria-disabled="true" tabindex="-1"' : ''}>Trước</a>
+      ${pages.map((number) => number === 'ellipsis'
+        ? '<span aria-hidden="true">…</span>'
+        : `<a class="page-number${number === page ? ' current-page' : ''}" href="${escapeHtml(listUrl(window.location.pathname, state, number))}" data-link ${number === page ? 'aria-current="page"' : ''}>${number}</a>`).join('')}
+      <a class="button button-secondary" href="${escapeHtml(listUrl(window.location.pathname, state, Math.min(totalPages, page + 1)))}" data-link ${page >= totalPages ? 'aria-disabled="true" tabindex="-1"' : ''}>Sau</a>
+    </nav>`;
+}
+
+function startInfiniteScroll(version) {
+  listObserver?.disconnect();
+  if (!activeList || paginationFor(activeList.resource) !== 'infinite') return;
+  const sentinel = main.querySelector('[data-infinite-sentinel]');
+  if (!sentinel || !('IntersectionObserver' in window)) return;
+  listObserver = new IntersectionObserver((entries) => {
+    if (entries.some((entry) => entry.isIntersecting)) loadNextListPage(version);
+  }, { rootMargin: '240px' });
+  listObserver.observe(sentinel);
+}
+
+async function loadNextListPage(version) {
+  const listing = activeList;
+  if (!listing || listing.version !== version || routeVersion !== version ||
+      listing.loading || listing.items.length >= listing.total) return;
+  listing.loading = true;
+  const nextPage = Math.ceil(listing.items.length / listPageSize) + 1;
+  const button = main.querySelector('[data-load-more]');
+  if (button) button.disabled = true;
+  try {
+    const result = await request(listApiUrl(listing.resource, listing.state, nextPage, listPageSize));
+    if (activeList !== listing || routeVersion !== version) return;
+    listing.items.push(...result.items);
+    listing.total = result.total;
+    listing.page = Math.max(1, Math.ceil(listing.items.length / listPageSize));
+    window.history.pushState({}, '', listUrl(window.location.pathname, listing.state, listing.page));
+    renderActiveListItems(listing);
+    startInfiniteScroll(version);
+  } catch (error) {
+    if (activeList === listing && routeVersion === version) showToast(error.message, true);
+  } finally {
+    listing.loading = false;
+    const currentButton = main.querySelector('[data-load-more]');
+    if (currentButton) currentButton.disabled = false;
+  }
+}
+
+function renderActiveListItems(listing) {
+  if (listing.resource === 'dishes') {
+    const grid = main.querySelector('[data-list-items]');
+    grid.innerHTML = listing.items.length
+      ? listing.items.map(renderDishCard).join('')
+      : '<div class="panel empty-state">Không tìm thấy món ăn phù hợp.</div>';
+  } else {
+    const body = main.querySelector('[data-list-items]');
+    const firstItemIndex = paginationFor(listing.resource) === 'pages'
+      ? (listing.page - 1) * listPageSize
+      : 0;
+    body.innerHTML = listing.items.length
+      ? listing.items.map((record, index) =>
+        renderAdminRow(listing.resource, record, firstItemIndex + index)).join('')
+      : `<tr><td colspan="6" class="empty-state">Chưa có ${escapeHtml(resourceLabel(listing.resource))} nào phù hợp.</td></tr>`;
+  }
+  const controls = main.querySelector('[data-list-pagination]');
+  if (controls) {
+    controls.innerHTML = listPaginationMarkup(
+      listing.resource, listing.state, listing.page, listing.totalPages,
+      listing.total, listing.items.length
+    );
+  }
+}
+
 function resourceLabel(resource) {
   return ({ dishes: 'món ăn', chefs: 'đầu bếp', ingredients: 'nguyên liệu' })[resource];
 }
@@ -168,9 +401,25 @@ function renderDishCard(dish) {
 async function renderDishList(version, query) {
   setLoading('Đang tải thực đơn');
   try {
-    const search = query.get('q') || '';
-    const dishes = await request(`/dishes${search ? `?q=${encodeURIComponent(search)}` : ''}`);
+    const state = currentListState(query, 'dishes');
+    const result = await request(listApiUrl('dishes', state, state.page, listPageSize));
     if (version !== routeVersion) return;
+    const page = result.page;
+    if (page !== state.page) {
+      state.page = page;
+      window.history.replaceState({}, '', listUrl('/dishes', state, page));
+    }
+    activeList = {
+      resource: 'dishes',
+      state,
+      pagination: paginationFor('dishes'),
+      page,
+      totalPages: result.totalPages,
+      total: result.total,
+      items: result.items,
+      loading: false,
+      version
+    };
     main.innerHTML = `
       <div class="spa-page">
         <section class="hero">
@@ -183,16 +432,15 @@ async function renderDishList(version, query) {
         </section>
         <div class="spa-heading">
           <div><p class="eyebrow">Từ căn bếp của chúng tôi</p><h2>Thực đơn hôm nay</h2></div>
-          <p>${dishes.length} món ăn</p>
+          <p>${result.total.toLocaleString('vi-VN')} món ăn</p>
         </div>
-        <form class="search-form" data-search-form>
-          <input type="search" name="q" value="${escapeHtml(search)}" placeholder="Tìm tên món ăn..." aria-label="Tìm tên món ăn">
-          <button type="submit">Tìm món</button>
-        </form>
-        ${dishes.length
-          ? `<div class="dish-grid">${dishes.map(renderDishCard).join('')}</div>`
-          : '<div class="panel empty-state">Không tìm thấy món ăn. Hãy thử từ khóa khác nhé.</div>'}
+        ${catalogForm('dishes', state, result.categories)}
+        <p class="hint">Đang xem trang ${page} / ${result.totalPages}; mở lại URL sẽ khôi phục đúng trang này.</p>
+        <div class="dish-grid" data-list-items></div>
+        <div data-list-pagination></div>
       </div>`;
+    renderActiveListItems(activeList);
+    startInfiniteScroll(version);
   } catch (error) {
     if (version === routeVersion) setError(error);
   }
@@ -273,22 +521,51 @@ function renderAdminRow(resource, record, index) {
 async function renderAdminList(version, resource) {
   setLoading(`Đang tải danh sách ${resourceLabel(resource)}`);
   try {
-    const records = await request(`/${resource}`);
+    const state = currentListState(new URLSearchParams(window.location.search), resource);
+    const pagination = paginationFor(resource);
+    const restoreMore = pagination !== 'pages' && state.page > 1;
+    const pageSize = restoreMore
+      ? Math.min(state.page * listPageSize, listRestoreMaximum)
+      : listPageSize;
+    const result = await request(listApiUrl(
+      resource, state, restoreMore ? 1 : state.page, pageSize
+    ));
     if (version !== routeVersion) return;
+    const page = pagination === 'pages'
+      ? result.page
+      : Math.max(1, Math.ceil(result.items.length / listPageSize));
+    if (page !== state.page) {
+      state.page = page;
+      window.history.replaceState({}, '', listUrl(window.location.pathname, state, page));
+    }
+    activeList = {
+      resource,
+      state,
+      pagination,
+      page,
+      totalPages: result.totalPages,
+      total: result.total,
+      items: result.items,
+      loading: false,
+      version
+    };
     const title = resourceTitle(resource);
     main.innerHTML = `
       <div class="spa-page">
         <p class="eyebrow">Khu vực quản trị</p>
         <div class="spa-heading">
-          <div><h1>Quản lý ${escapeHtml(title.toLowerCase())}</h1><p>${records.length} bản ghi</p></div>
+          <div><h1>Quản lý ${escapeHtml(title.toLowerCase())}</h1><p>${result.total.toLocaleString('vi-VN')} bản ghi</p></div>
           <a class="button" href="/admin/${resource}/new" data-link>Thêm ${escapeHtml(resourceLabel(resource))}</a>
         </div>
+        ${catalogForm(resource, state, result.categories || [])}
+        <p class="hint">Danh sách được tìm kiếm/sắp xếp ở server trước phân trang. Cách phân trang của danh sách này: <strong>${paginationLabel(resource)}</strong>. Mở lại URL sẽ khôi phục ${pagination === 'pages' ? `trang ${page}` : 'phần đã tải'}.</p>
         <section class="panel">
-          ${records.length
-            ? `<div class="table-wrap"><table><thead>${listHeaders(resource)}</thead><tbody>${records.map((record, index) => renderAdminRow(resource, record, index)).join('')}</tbody></table></div>`
-            : `<div class="empty-state">Chưa có ${escapeHtml(resourceLabel(resource))} nào. Hãy thêm bản ghi đầu tiên.</div>`}
+          <div class="table-wrap"><table><thead>${listHeaders(resource)}</thead><tbody data-list-items></tbody></table></div>
         </section>
+        <div data-list-pagination></div>
       </div>`;
+    renderActiveListItems(activeList);
+    startInfiniteScroll(version);
   } catch (error) {
     if (version === routeVersion) setError(error);
   }
@@ -416,10 +693,15 @@ async function renderAdminForm(version, resource, mode, id) {
       ? request(`/${resource}/${encodeURIComponent(id)}`)
       : Promise.resolve(null);
     const optionsPromise = resource === 'dishes'
-      ? Promise.all([request('/chefs'), request('/ingredients')])
+      ? Promise.all([
+          request('/chefs?pageSize=1000'),
+          request('/ingredients?pageSize=1000')
+        ])
       : Promise.resolve([[], []]);
-    const [record, [chefs, ingredients]] = await Promise.all([recordPromise, optionsPromise]);
+    const [record, [chefResults, ingredientResults]] = await Promise.all([recordPromise, optionsPromise]);
     if (version !== routeVersion) return;
+    const chefs = chefResults.items || chefResults;
+    const ingredients = ingredientResults.items || ingredientResults;
 
     const editing = mode === 'edit';
     const title = `${editing ? 'Sửa' : 'Thêm'} ${resourceLabel(resource)}`;
@@ -490,6 +772,8 @@ async function renderAdminDelete(version, resource, id) {
 }
 
 async function renderRoute() {
+  listObserver?.disconnect();
+  activeList = null;
   const version = ++routeVersion;
   const route = routeFromLocation();
   if (route.name === 'not-found') return renderNotFound();
@@ -548,6 +832,18 @@ document.addEventListener('click', async (event) => {
     return;
   }
 
+  const loadMore = event.target.closest('[data-load-more]');
+  if (loadMore) {
+    loadNextListPage(routeVersion);
+    return;
+  }
+
+  const pageLink = event.target.closest('.pagination a[aria-disabled="true"]');
+  if (pageLink) {
+    event.preventDefault();
+    return;
+  }
+
   const confirmDelete = event.target.closest('[data-confirm-delete]');
   if (!confirmDelete) return;
   confirmDelete.disabled = true;
@@ -565,11 +861,22 @@ document.addEventListener('click', async (event) => {
 });
 
 document.addEventListener('submit', async (event) => {
-  const searchForm = event.target.closest('[data-search-form]');
-  if (searchForm) {
+  const filtersForm = event.target.closest('form[data-catalog-form]');
+  if (filtersForm) {
     event.preventDefault();
-    const query = new URLSearchParams(new FormData(searchForm));
-    navigate(`/dishes${query.get('q') ? `?q=${encodeURIComponent(query.get('q'))}` : ''}`);
+    const data = new FormData(filtersForm);
+    const resource = filtersForm.dataset.resource;
+    const state = {
+      q: String(data.get('q') || '').trim(),
+      mode: String(data.get('mode') || 'basic'),
+      category: String(data.get('category') || ''),
+      minPrice: String(data.get('minPrice') || ''),
+      maxPrice: String(data.get('maxPrice') || ''),
+      available: String(data.get('available') || ''),
+      sort: String(data.get('sort') || 'id_desc')
+    };
+    const pathname = resource === 'dishes' ? '/dishes' : `/admin/${resource}`;
+    navigate(listUrl(pathname, state));
     return;
   }
 
@@ -598,6 +905,11 @@ document.addEventListener('submit', async (event) => {
 });
 
 document.addEventListener('change', (event) => {
+  if (event.target.matches('form[data-catalog-form] select[name="mode"]')) {
+    const queryInput = event.target.form.elements.q;
+    queryInput.required = ['fulltext', 'fuzzy'].includes(event.target.value);
+  }
+
   if (event.target.matches('[data-image-input]')) {
     const preview = event.target.closest('form').querySelector('[data-image-preview]');
     const file = event.target.files?.[0];

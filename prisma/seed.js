@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
+const { Prisma, PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const chefs = [
@@ -8,6 +8,22 @@ const chefs = [
   { name: 'Lê Quốc Bảo', specialty: 'Món nướng và món chính' },
   { name: 'Phạm Thu Hà', specialty: 'Món cuốn, món chay và tráng miệng' }
 ];
+const specialtyOptions = [
+  'Món Việt truyền thống',
+  'Món nướng và món chính',
+  'Món nước và bún phở',
+  'Món chay và rau củ',
+  'Hải sản và món khai vị',
+  'Tráng miệng và bánh',
+  'Món Á hiện đại',
+  'Món Âu và nước sốt'
+];
+for (let index = chefs.length + 1; index <= 100; index += 1) {
+  chefs.push({
+    name: `Đầu bếp Bếp Nhà ${String(index).padStart(3, '0')}`,
+    specialty: specialtyOptions[(index - 6) % specialtyOptions.length]
+  });
+}
 
 const ingredients = [
   { name: 'Thịt bò', unit: 'kg' },
@@ -62,10 +78,112 @@ const ingredients = [
   { name: 'Nghệ', unit: 'kg' },
   { name: 'Me', unit: 'kg' },
   { name: 'Mật ong', unit: 'lít' },
-  { name: 'Chuối', unit: 'nải' }
+  { name: 'Chuối', unit: 'nải' },
+  { name: 'Thịt gà', unit: 'kg' },
+  { name: 'Xương bò', unit: 'kg' },
+  { name: 'Xương heo', unit: 'kg' },
+  { name: 'Tôm khô', unit: 'kg' },
+  { name: 'Cua biển', unit: 'kg' },
+  { name: 'Sò điệp', unit: 'kg' },
+  { name: 'Bạch tuộc', unit: 'kg' },
+  { name: 'Cá basa', unit: 'kg' },
+  { name: 'Cá thu', unit: 'kg' },
+  { name: 'Thịt vịt', unit: 'kg' },
+  { name: 'Thịt cừu', unit: 'kg' },
+  { name: 'Đậu xanh', unit: 'kg' },
+  { name: 'Đậu đỏ', unit: 'kg' },
+  { name: 'Đậu đen', unit: 'kg' },
+  { name: 'Hạt sen', unit: 'kg' },
+  { name: 'Hạt điều', unit: 'kg' },
+  { name: 'Mè trắng', unit: 'kg' },
+  { name: 'Mè đen', unit: 'kg' },
+  { name: 'Bắp ngọt', unit: 'kg' },
+  { name: 'Bí đỏ', unit: 'kg' },
+  { name: 'Bí xanh', unit: 'kg' },
+  { name: 'Bông cải xanh', unit: 'kg' },
+  { name: 'Bông cải trắng', unit: 'kg' },
+  { name: 'Cải thìa', unit: 'kg' },
+  { name: 'Cải bó xôi', unit: 'kg' },
+  { name: 'Cải xanh', unit: 'kg' },
+  { name: 'Rau cần', unit: 'bó' },
+  { name: 'Húng quế', unit: 'bó' },
+  { name: 'Ngò rí', unit: 'bó' },
+  { name: 'Ngò gai', unit: 'bó' },
+  { name: 'Lá chanh', unit: 'bó' },
+  { name: 'Lá dứa', unit: 'bó' },
+  { name: 'Nấm kim châm', unit: 'gói' },
+  { name: 'Nấm đùi gà', unit: 'kg' },
+  { name: 'Nấm mỡ', unit: 'kg' },
+  { name: 'Nấm mèo', unit: 'kg' },
+  { name: 'Đậu que', unit: 'kg' },
+  { name: 'Đậu bắp', unit: 'kg' },
+  { name: 'Củ sen', unit: 'kg' },
+  { name: 'Củ sắn', unit: 'kg' },
+  { name: 'Khoai tây', unit: 'kg' },
+  { name: 'Khoai môn cao', unit: 'kg' },
+  { name: 'Ớt chuông', unit: 'kg' },
+  { name: 'Ớt khô', unit: 'kg' },
+  { name: 'Tiêu đen', unit: 'kg' },
+  { name: 'Quế', unit: 'kg' },
+  { name: 'Hoa hồi', unit: 'kg' },
+  { name: 'Thảo quả', unit: 'kg' },
+  { name: 'Bột cà ri', unit: 'kg' },
+  { name: 'Bột bắp', unit: 'kg' },
+  { name: 'Bột gạo', unit: 'kg' },
+  { name: 'Bột chiên xù', unit: 'kg' },
+  { name: 'Nước tương', unit: 'lít' },
+  { name: 'Dầu hào', unit: 'lít' },
+  { name: 'Dầu mè', unit: 'lít' },
+  { name: 'Dầu ăn', unit: 'lít' },
+  { name: 'Giấm gạo', unit: 'lít' },
+  { name: 'Rượu nấu ăn', unit: 'lít' },
+  { name: 'Sữa đặc', unit: 'lon' },
+  { name: 'Kem tươi', unit: 'lít' },
+  { name: 'Phô mai', unit: 'kg' },
+  { name: 'Bơ lạt', unit: 'kg' },
+  { name: 'Bánh mì', unit: 'ổ' },
+  { name: 'Mì trứng', unit: 'kg' },
+  { name: 'Miến dong', unit: 'kg' },
+  { name: 'Bánh canh', unit: 'kg' },
+  { name: 'Bánh đa', unit: 'kg' },
+  { name: 'Đường phèn', unit: 'kg' },
+  { name: 'Mắm tôm', unit: 'hũ' },
+  { name: 'Chao', unit: 'hũ' },
+  { name: 'Tương ớt', unit: 'chai' },
+  { name: 'Tương cà', unit: 'chai' },
+  { name: 'Rong biển', unit: 'gói' },
+  { name: 'Đậu phụ non', unit: 'hộp' },
+  { name: 'Thịt nguội', unit: 'kg' },
+  { name: 'Xúc xích', unit: 'kg' },
+  { name: 'Trứng vịt', unit: 'quả' },
+  { name: 'Trứng cút', unit: 'quả' },
+  { name: 'Bơ sáp', unit: 'quả' },
+  { name: 'Xoài xanh', unit: 'kg' },
+  { name: 'Táo', unit: 'kg' },
+  { name: 'Cam', unit: 'kg' },
+  { name: 'Dứa', unit: 'quả' },
+  { name: 'Dâu tây', unit: 'kg' },
+  { name: 'Thanh long', unit: 'quả' },
+  { name: 'Sữa chua', unit: 'hộp' },
+  { name: 'Bột cacao', unit: 'kg' },
+  { name: 'Bột matcha', unit: 'kg' },
+  { name: 'Vanilla', unit: 'lọ' },
+  { name: 'Bột nở', unit: 'gói' },
+  { name: 'Men nở', unit: 'gói' },
+  { name: 'Gelatin', unit: 'gói' },
+  { name: 'Bột rau câu', unit: 'gói' },
+  { name: 'Nước dừa', unit: 'lít' },
+  { name: 'Rau cải mầm', unit: 'hộp' },
+  { name: 'Măng tươi', unit: 'kg' },
+  { name: 'Măng khô', unit: 'kg' },
+  { name: 'Bạc hà', unit: 'bó' },
+  { name: 'Giấm táo', unit: 'lít' },
+  { name: 'Sốt mayonnaise', unit: 'chai' },
+  { name: 'Sốt tiêu đen', unit: 'chai' },
+  { name: 'Sốt cà ri', unit: 'hũ' }
 ];
 
-const recipes = [
+const featuredRecipes = [
   {
     name: 'Phở Bò Tradition', description: 'Phở bò truyền thống với nước dùng ninh xương, bánh phở mềm và rau thơm.', price: 65000, category: 'Món chính',
     chefs: ['Nguyễn Văn A', 'Trần Thị Mai'], ingredients: ['Thịt bò', 'Bánh phở', 'Rau thơm', 'Hành lá', 'Gừng', 'Hành tây', 'Củ cải trắng']
@@ -148,6 +266,25 @@ const recipes = [
   }
 ];
 
+const recipes = [
+  ...featuredRecipes,
+  ...Array.from({ length: 980 }, (_, index) => {
+    const source = featuredRecipes[index % featuredRecipes.length];
+    const firstChef = (index * 7) % chefs.length;
+    const secondChef = (firstChef + 1 + (index % (chefs.length - 1))) % chefs.length;
+    const extraIngredient = ingredients[(index * 11) % ingredients.length].name;
+    return {
+      name: `Món mẫu ${String(index + featuredRecipes.length + 1).padStart(4, '0')} · ${source.name}`,
+      description: `${source.description} Công thức mẫu số ${index + 21}, kết hợp ${extraIngredient.toLowerCase()}.`,
+      price: source.price + (index % 17) * 1000,
+      category: source.category,
+      available: index % 13 !== 0,
+      chefs: [chefs[firstChef].name, chefs[secondChef].name],
+      ingredients: [...new Set([...source.ingredients, extraIngredient])]
+    };
+  })
+];
+
 async function ensureNamedRecords(model, records) {
   const names = records.map((record) => record.name);
   const existing = await model.findMany({ where: { name: { in: names } } });
@@ -164,8 +301,8 @@ async function ensureNamedRecords(model, records) {
 }
 
 async function main() {
-  if (recipes.length !== 20 || chefs.length !== 5) {
-    throw new Error('Danh mục mẫu cần đúng 20 món ăn và 5 đầu bếp.');
+  if (recipes.length !== 1000 || chefs.length !== 100 || ingredients.length < 100) {
+    throw new Error('Danh mục mẫu cần đúng 1000 món, 100 đầu bếp và ít nhất 100 nguyên liệu.');
   }
   for (const recipe of recipes) {
     if (recipe.chefs.length === 0 || recipe.ingredients.length === 0 ||
@@ -182,39 +319,87 @@ async function main() {
     recipes.map(({ chefs: recipeChefs, ingredients: recipeIngredients, ...dish }) => dish)
   );
 
-  await Promise.all(chefs.map((chef) => {
+  const chefRows = chefs.map((chef) => {
     const existing = chefRecords.get(chef.name);
-    return prisma.chef.update({
-      where: { id: existing.id },
-      data: { specialty: chef.specialty }
-    });
-  }));
+    if (!existing) throw new Error(`Không tìm thấy đầu bếp "${chef.name}" trong dữ liệu mẫu.`);
+    return { id: existing.id, specialty: chef.specialty };
+  });
+  const chefValues = chefRows.map((chef) => Prisma.sql`(${chef.id}, ${chef.specialty})`);
+  await prisma.$executeRaw(Prisma.sql`
+    UPDATE "Chef" AS chef
+    SET "specialty" = seed."specialty"
+    FROM (VALUES ${Prisma.join(chefValues)}) AS seed("id", "specialty")
+    WHERE chef."id" = seed."id"
+  `);
 
-  await Promise.all(recipes.map((recipe) => {
-    const chefIds = recipe.chefs.map((name) => {
-      const chef = chefRecords.get(name);
-      if (!chef) throw new Error(`Không tìm thấy đầu bếp "${name}" trong dữ liệu mẫu.`);
-      return { id: chef.id };
-    });
-    const ingredientIds = recipe.ingredients.map((name) => {
-      const ingredient = ingredientRecords.get(name);
-      if (!ingredient) throw new Error(`Không tìm thấy nguyên liệu "${name}" trong dữ liệu mẫu.`);
-      return { id: ingredient.id };
-    });
+  const dishRows = recipes.map((recipe) => {
     const dish = dishRecords.get(recipe.name);
+    if (!dish) throw new Error(`Không tìm thấy món "${recipe.name}" trong dữ liệu mẫu.`);
+    return {
+      id: dish.id,
+      description: recipe.description,
+      price: recipe.price,
+      category: recipe.category,
+      available: recipe.available ?? true,
+      chefIds: recipe.chefs.map((name) => {
+        const chef = chefRecords.get(name);
+        if (!chef) throw new Error(`Không tìm thấy đầu bếp "${name}" trong dữ liệu mẫu.`);
+        return chef.id;
+      }),
+      ingredientIds: recipe.ingredients.map((name) => {
+        const ingredient = ingredientRecords.get(name);
+        if (!ingredient) throw new Error(`Không tìm thấy nguyên liệu "${name}" trong dữ liệu mẫu.`);
+        return ingredient.id;
+      })
+    };
+  });
 
-    return prisma.dish.update({
-      where: { id: dish.id },
-      data: {
-        description: recipe.description,
-        price: recipe.price,
-        category: recipe.category,
-        available: true,
-        chefs: { set: chefIds },
-        ingredients: { set: ingredientIds }
+  for (let offset = 0; offset < dishRows.length; offset += 100) {
+    const batch = dishRows.slice(offset, offset + 100);
+    const rows = batch.map((dish) => Prisma.sql`(
+      ${dish.id}, ${dish.description}, ${dish.price}, ${dish.category}, ${dish.available}
+    )`);
+    await prisma.$executeRaw(Prisma.sql`
+      UPDATE "Dish" AS dish
+      SET "description" = seed."description",
+          "price" = seed."price",
+          "category" = seed."category",
+          "available" = seed."available"
+      FROM (VALUES ${Prisma.join(rows)}) AS seed("id", "description", "price", "category", "available")
+      WHERE dish."id" = seed."id"
+    `);
+  }
+
+  const dishIds = dishRows.map((dish) => dish.id);
+  const chefLinks = dishRows.flatMap((dish) => dish.chefIds.map((chefId) => [chefId, dish.id]));
+  const ingredientLinks = dishRows.flatMap((dish) =>
+    dish.ingredientIds.map((ingredientId) => [dish.id, ingredientId])
+  );
+  await prisma.$transaction(async (transaction) => {
+    for (let offset = 0; offset < dishIds.length; offset += 500) {
+      const batch = dishIds.slice(offset, offset + 500);
+      await transaction.$executeRaw(Prisma.sql`
+        DELETE FROM "_DishChefs" WHERE "B" IN (${Prisma.join(batch)})
+      `);
+      await transaction.$executeRaw(Prisma.sql`
+        DELETE FROM "_DishIngredients" WHERE "A" IN (${Prisma.join(batch)})
+      `);
+    }
+
+    for (const [table, links] of [
+      ['_DishChefs', chefLinks],
+      ['_DishIngredients', ingredientLinks]
+    ]) {
+      for (let offset = 0; offset < links.length; offset += 500) {
+        const rows = links.slice(offset, offset + 500)
+          .map(([firstId, secondId]) => Prisma.sql`(${firstId}, ${secondId})`);
+        await transaction.$executeRaw(Prisma.sql`
+          INSERT INTO ${Prisma.raw(`"${table}"`)} ("A", "B")
+          VALUES ${Prisma.join(rows)}
+        `);
       }
-    });
-  }));
+    }
+  }, { maxWait: 10000, timeout: 120000 });
 
   console.log(`Đã nạp ${recipes.length} món ăn, ${ingredients.length} nguyên liệu và ${chefs.length} đầu bếp mẫu. Dữ liệu khác không bị xóa.`);
 }

@@ -8,6 +8,7 @@
     "dev": "nodemon app.js",
     "prisma": "node scripts/prisma.js",
     "seed": "node scripts/prisma.js db seed",
+    "db:search-setup": "node scripts/prisma.js db execute --file prisma/search.sql --schema prisma/schema.prisma",
     "catalog:images": "node scripts/add-catalog-images.js"
   },
   "keywords": [],

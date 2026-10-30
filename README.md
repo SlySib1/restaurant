@@ -7,6 +7,9 @@
 - REST CRUD API cho món ăn, đầu bếp và nguyên liệu.
 - SPA dùng History API; điều hướng và gửi biểu mẫu không tải lại tài liệu.
 - Tìm món ăn theo tên, xem chi tiết món và trạng thái phục vụ.
+- Tìm kiếm basic/advanced/full-text/fuzzy, lọc và sắp xếp danh sách món ở backend.
+- Phân trang server-side: món ăn dùng số trang, đầu bếp dùng Load more, nguyên liệu dùng infinite scroll.
+- URL khôi phục từ khóa, bộ lọc, thứ tự sắp xếp, chế độ phân trang và vị trí đã xem.
 - Tải ảnh JPEG, PNG, WebP hoặc GIF (tối đa 5 MB), xem trước ảnh trước khi lưu.
 - Quan hệ nhiều-nhiều giữa món ăn với đầu bếp và nguyên liệu.
 - Xóa nguyên liệu sẽ xóa các món đang sử dụng nguyên liệu đó.
@@ -64,9 +67,19 @@ npm run seed
 npm run catalog:images
 ```
 
-Seed bổ sung/cập nhật 20 món ăn, 53 nguyên liệu, 5 đầu bếp cùng các quan hệ mà không xóa toàn bộ dữ liệu database. Script ảnh tải ảnh mẫu còn thiếu vào `public/uploads`.
+`npm run seed` nạp/cập nhật 1.000 món ăn mẫu, 100 đầu bếp, 155 nguyên liệu cùng các liên kết hợp lệ. Script có tính lặp an toàn, cập nhật các bản ghi mẫu cùng tên và không xóa dữ liệu người dùng khác; do đó các bản ghi tạo thêm qua CRUD vẫn được giữ nguyên. Có thể chạy lại để tái tạo/đồng bộ bộ dữ liệu mẫu. Script ảnh tải ảnh mẫu còn thiếu vào `public/uploads`.
 
-### 5. Khởi động server
+### 5. Cấu hình tìm kiếm PostgreSQL
+
+Trước khi dùng chế độ fuzzy/full-text lần đầu, cài extension và các index cần thiết:
+
+```powershell
+npm run db:search-setup
+```
+
+Lệnh chạy [prisma/search.sql](prisma/search.sql) trên database được cấu hình trong schema. SQL bật `pg_trgm`, tạo GIN index cho full-text với cấu hình `simple`, GIN trigram index cho tên món và các index phục vụ lọc/sắp xếp. Có thể chạy nội dung file này trong Supabase SQL Editor nếu tài khoản ứng dụng không được phép cài extension. Chỉ cần áp dụng một lần cho mỗi database; các lệnh dùng `IF NOT EXISTS`.
+
+### 6. Khởi động server
 
 ```powershell
 npm run dev
@@ -82,7 +95,7 @@ Mọi endpoint API bắt đầu bằng `/api`. Thành công trả về HTTP 200 
 
 | Method | Endpoint | Chức năng |
 |---|---|---|
-| GET | `/api/dishes?q=<từ khóa>` | Danh sách món, tùy chọn tìm kiếm theo tên |
+| GET | `/api/dishes` | Danh sách món có server pagination, search, filters và sorting |
 | GET | `/api/dishes/:id` | Chi tiết món |
 | POST | `/api/dishes` | Tạo món |
 | PATCH | `/api/dishes/:id` | Cập nhật món |
@@ -97,6 +110,25 @@ Mọi endpoint API bắt đầu bằng `/api`. Thành công trả về HTTP 200 
 | POST | `/api/ingredients` | Tạo nguyên liệu |
 | PATCH | `/api/ingredients/:id` | Cập nhật nguyên liệu |
 | DELETE | `/api/ingredients/:id` | Xóa nguyên liệu và các món liên quan |
+
+Endpoint danh sách nhận `page`, `pageSize` (mặc định 24, tối đa 1008), `q`, `sort`; endpoint món còn nhận `mode`, `category`, `minPrice`, `maxPrice`, `available`. Kết quả danh sách có dạng `data: { items, total, page, pageSize, totalPages, hasNextPage }`; danh sách món bổ sung `categories`.
+
+### Chế độ tìm kiếm, filter và sort
+
+- Từ khóa được chuẩn hóa không dấu ở API và PostgreSQL: ví dụ `pho bo` khớp `Phở Bò`, `dac san` khớp `Đặc sản`.
+- `basic`: tìm chuỗi con trong tên, không phân biệt hoa/thường hoặc dấu.
+- `advanced`: tìm tên không dấu và AND với các điều kiện được chọn.
+- `fulltext`: PostgreSQL full-text tìm trên tên + mô tả đã chuẩn hóa dấu, cùng cấu hình `simple` cho document và query; trong nhóm ảnh tương ứng, xếp `ts_rank` giảm dần rồi `id` tăng dần.
+- `fuzzy`: tìm tên không dấu với `pg_trgm`, ngưỡng similarity `0.3`; trong nhóm ảnh tương ứng, xếp similarity giảm dần rồi `id` tăng dần.
+- Món ăn: lọc `category`, `minPrice`, `maxPrice`, `available`; có thể kết hợp với từ khóa.
+- Sort món: tên A–Z/Z–A, giá tăng/giảm; đầu bếp và nguyên liệu hỗ trợ sort theo tên.
+- Bản ghi có ảnh được ưu tiên lên trước trong kết quả phù hợp; thứ tự liên quan/sort được giữ trong từng nhóm có ảnh và không ảnh.
+- Tìm kiếm, lọc và sắp xếp được áp dụng phía server trên toàn bộ tập dữ liệu phù hợp **trước** khi phân trang. Giao diện khách chỉ áp dụng search/filter cho catalog món; ba trang quản trị áp dụng lên toàn bộ resource tương ứng.
+- Ví dụ link có thể chia sẻ: `/dishes?mode=advanced&q=ga&category=M%C3%B3n+ch%C3%ADnh&minPrice=30000&available=true&sort=price_asc&page=2`.
+
+### Phân trang và URL
+
+Ba danh sách dùng server pagination riêng, mỗi danh sách có một cách hiển thị: **món ăn dùng số trang**, **đầu bếp dùng nút Tải thêm**, **nguyên liệu dùng cuộn vô hạn**. Browser tải tối đa 24 bản ghi mỗi request. Số trang lưu trang đang xem trong `page`; Tải thêm/cuộn vô hạn lưu số phần đã tải trong `page`. Sao chép hoặc reload URL sẽ tải lại đúng trang/phần đã xem từ đầu; đây là khôi phục bằng cách gọi API lại, không giữ state trong bộ nhớ. Đổi từ khóa, filter hoặc sort sẽ bắt đầu từ phần đầu. Back/Forward khôi phục URL tương ứng.
 
 Tạo/cập nhật món yêu cầu `name`, `price`, `chefIds` và `ingredientIds`; `description`, `category` và `available` có mặc định khi tạo. Đầu bếp cần `name`, `specialty`; nguyên liệu cần `name`, `unit`. Các thao tác có ảnh gửi dưới dạng `multipart/form-data`, trường tệp là `image`; có thể gửi `removeImage=true` khi cập nhật để bỏ ảnh hiện tại. Không gửi ảnh thì ảnh đang lưu được giữ nguyên.
 
@@ -138,6 +170,7 @@ Khi CORS lỗi, chi tiết thường xuất hiện trong **Developer Tools → C
 | `npm start` | Chạy Express |
 | `npm run prisma -- <lệnh>` | Chạy Prisma CLI với biến môi trường project |
 | `npm run seed` | Nạp/cập nhật dữ liệu mẫu |
+| `npm run db:search-setup` | Cài extension và index tìm kiếm PostgreSQL |
 | `npm run catalog:images` | Tải và gán ảnh mẫu còn thiếu |
 
 ## Bảo mật và giới hạn
