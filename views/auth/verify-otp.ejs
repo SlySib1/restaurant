@@ -1,0 +1,44 @@
+<%- include('../partials/header', { title: 'Xác minh email' }) %>
+<section class="auth-shell">
+  <div class="auth-intro">
+    <p class="eyebrow">Bước 2 / 2</p>
+    <h1>Nhập mã xác minh để kích hoạt tài khoản.</h1>
+    <p class="page-intro">Mã gồm <%= otpLength %> chữ số đã được gửi tới <strong><%= maskedEmail %></strong>. Mã có hiệu lực <%= expiresInMinutes %> phút, chỉ dùng được một lần và không được lưu ở trình duyệt.</p>
+    <ul class="auth-points">
+      <li>Mỗi lần yêu cầu gửi lại, mã cũ sẽ hết hiệu lực ngay.</li>
+      <li>Nhập sai quá 5 lần thì cần yêu cầu mã mới.</li>
+    </ul>
+  </div>
+
+  <div class="panel auth-card">
+    <p class="eyebrow">Xác minh email</p>
+    <h2>Nhập mã xác minh</h2>
+
+    <% if (errors && errors.length) { %>
+      <div class="error-box" role="alert">
+        <% errors.forEach(error => { %><p><%= error %></p><% }) %>
+      </div>
+    <% } %>
+
+    <form class="form-stack" action="/auth/verify-otp" method="POST" novalidate>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+      <div class="field">
+        <label for="code">Mã xác minh</label>
+        <input id="code" class="otp-input" type="text" name="code" inputmode="numeric" pattern="[0-9]*" maxlength="<%= otpLength %>" required autocomplete="one-time-code" autofocus>
+        <p class="hint">Gồm <%= otpLength %> chữ số trong email vừa gửi.</p>
+      </div>
+
+      <div class="button-row">
+        <button type="submit">Xác minh</button>
+        <a class="button button-secondary" href="/auth/register">Đổi email</a>
+      </div>
+    </form>
+
+    <form class="inline-form resend-form" action="/auth/resend-otp" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="link-button">Chưa nhận được mã? Gửi lại sau 60 giây</button>
+    </form>
+  </div>
+</section>
+<%- include('../partials/footer') %>

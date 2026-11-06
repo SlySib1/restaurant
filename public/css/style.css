@@ -196,3 +196,44 @@ tbody tr:hover { background: #f8faf5; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* ---- Đăng nhập / đăng ký ---- */
+.auth-shell { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 430px); align-items: start; gap: clamp(1.5rem, 4vw, 3rem); }
+.auth-shell-single { grid-template-columns: minmax(0, 560px); justify-content: center; }
+.auth-intro { padding-top: .4rem; }
+.auth-intro h1 { max-width: 15ch; }
+.auth-points { display: grid; gap: .55rem; margin: 1.4rem 0 0; padding: 0; list-style: none; }
+.auth-points li { position: relative; padding-left: 1.6rem; color: var(--muted); font-size: .9rem; line-height: 1.6; }
+.auth-points li::before { position: absolute; top: .45rem; left: 0; width: .55rem; height: .55rem; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 3px rgba(217, 237, 189, .45); content: ''; }
+.auth-card { padding: clamp(1.3rem, 3vw, 2rem); }
+.auth-card h1, .auth-card h2 { font-size: clamp(1.5rem, 3vw, 2rem); }
+.auth-card .hint a { font-weight: 700; }
+.auth-message-card p { color: var(--muted); }
+.auth-message-card.is-error { border-color: #f0c9c3; background: #fffaf9; }
+.auth-message-card.is-error .eyebrow { color: var(--red); }
+.resend-form { margin-top: 1rem; padding-top: .9rem; border-top: 1px dashed var(--line); }
+.link-button { min-height: 0; padding: 0; border: 0; border-radius: 0; background: none; color: var(--green); font-size: .85rem; font-weight: 700; text-decoration: underline; }
+.link-button:hover { transform: none; background: none; box-shadow: none; color: var(--orange); }
+.captcha-row { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.captcha-row input[name="captcha"] { flex: 1 1 110px; min-width: 90px; letter-spacing: .18em; font-weight: 700; text-transform: uppercase; }
+.captcha-image { flex: 0 0 auto; width: 190px; height: 64px; border: 1px solid var(--line); border-radius: 12px; background: #f4f7ef; }
+.otp-input { letter-spacing: .55em; font-size: 1.35rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
+.nav-auth { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.nav-user { color: var(--muted); font-size: .84rem; }
+.nav-login { padding: .5rem .7rem; border-radius: 999px; color: var(--muted); font-size: .88rem; font-weight: 600; }
+.nav-login:hover { color: var(--green-dark); background: #edf3e7; }
+.button-small { min-height: 34px; padding: .45rem .8rem; font-size: .82rem; border-radius: 10px; }
+.inline-form { display: inline-flex; margin: 0; }
+.flash { margin: 0 0 1.4rem; padding: .8rem 1rem; border: 1px solid transparent; border-radius: 14px; font-size: .9rem; font-weight: 600; }
+.badge-admin { margin-left: .3rem; background: #fdece1; color: #a8562f; font-size: .68rem; letter-spacing: .04em; text-transform: uppercase; }
+.flash-success { border-color: #d8e5d0; background: #f3f8ee; color: var(--green-dark); }
+.flash-error { border-color: #f0c9c3; background: #fff3f1; color: #8d332c; }
+
+@media (max-width: 900px) {
+  .auth-shell { grid-template-columns: 1fr; }
+  .auth-intro h1 { max-width: none; }
+  .nav-auth { width: 100%; justify-content: flex-start; }
+  /* Trên điện thoại, đưa biểu mẫu lên trước phần giới thiệu để không phải cuộn xa. */
+  .auth-card { order: -1; }
+  .auth-shell-single .auth-card { order: 0; }
+}

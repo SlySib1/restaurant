@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><%= title %> | Bếp Nhà</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -11,9 +12,26 @@
     <a class="brand" href="/dishes">Bếp<span>Nhà</span></a>
     <div class="nav-links">
       <a href="/dishes">Thực đơn</a>
-      <a href="/admin/dishes">Món ăn</a>
-      <a href="/admin/chefs">Đầu bếp</a>
-      <a href="/admin/ingredients">Nguyên liệu</a>
+      <% if (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'admin') { %>
+        <a href="/admin/dishes">Món ăn</a>
+        <a href="/admin/chefs">Đầu bếp</a>
+        <a href="/admin/ingredients">Nguyên liệu</a>
+      <% } %>
+    </div>
+    <div class="nav-auth">
+      <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+        <span class="nav-user">Chào, <strong><%= currentUser.name %></strong><% if (currentUser.role === 'admin') { %> <span class="badge badge-admin">Quản trị</span><% } %></span>
+        <form class="inline-form" action="/auth/logout" method="POST">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+          <button class="button button-secondary button-small" type="submit">Đăng xuất</button>
+        </form>
+      <% } else { %>
+        <a class="nav-login" href="/auth/login">Đăng nhập</a>
+        <a class="button button-small" href="/auth/register">Đăng ký</a>
+      <% } %>
     </div>
   </nav>
   <main class="page-shell animate-in">
+    <% if (typeof flash !== 'undefined' && flash) { %>
+      <div class="flash flash-<%= flash.type %>" role="status"><%= flash.text %></div>
+    <% } %>

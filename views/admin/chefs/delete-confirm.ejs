@@ -21,6 +21,7 @@
   <% } %>
 
   <form action="/admin/chefs/<%= chef.id %>?_method=DELETE" method="POST" class="button-row">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <button class="button-danger" type="submit">Xác nhận xóa đầu bếp</button>
     <a class="button button-secondary" href="/admin/chefs">Hủy</a>
   </form>

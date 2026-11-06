@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Bếp Nhà">
+  <rect width="64" height="64" rx="14" fill="#315d42" />
+  <path d="M12 33h40c0 10-8 17-20 17S12 43 12 33Z" fill="#d9edbd" />
+  <path d="M22 25c0-4 3-4 3-8M32 25c0-4 3-4 3-8M42 25c0-4 3-4 3-8" stroke="#fffefa" stroke-width="3" stroke-linecap="round" fill="none" opacity=".85" />
+  <rect x="10" y="50" width="44" height="4" rx="2" fill="#fffefa" opacity=".65" />
+</svg>

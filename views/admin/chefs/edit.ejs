@@ -9,6 +9,7 @@
 
 <section class="panel">
   <form action="/admin/chefs/<%= chef.id %>?_method=PATCH" method="POST" enctype="multipart/form-data" class="form-stack">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <div class="field"><label for="name">Tên đầu bếp</label><input id="name" type="text" name="name" value="<%= chef.name %>" required></div>
     <div class="field"><label for="specialty">Chuyên môn</label><input id="specialty" type="text" name="specialty" value="<%= chef.specialty %>" required></div>
     <div class="field">

@@ -9,6 +9,7 @@
 
 <section class="panel">
   <form action="/admin/ingredients/<%= ingredient.id %>?_method=PATCH" method="POST" enctype="multipart/form-data" class="form-stack">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <div class="field"><label for="name">Tên nguyên liệu</label><input id="name" type="text" name="name" value="<%= ingredient.name %>" required></div>
     <div class="field"><label for="unit">Đơn vị tính</label><input id="unit" type="text" name="unit" value="<%= ingredient.unit %>" required></div>
     <div class="field">

@@ -9,6 +9,7 @@
 
 <section class="panel">
   <form action="/admin/dishes/<%= dish.id %>?_method=PATCH" method="POST" enctype="multipart/form-data" class="form-stack">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <div class="field"><label for="name">Tên món</label><input id="name" type="text" name="name" value="<%= dish.name %>" required></div>
     <div class="field"><label for="description">Mô tả</label><textarea id="description" name="description"><%= dish.description %></textarea></div>
     <div class="field"><label for="price">Giá (VNĐ)</label><input id="price" type="number" step="0.01" min="0" name="price" value="<%= dish.price %>" required></div>

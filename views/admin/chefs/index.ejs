@@ -11,6 +11,7 @@
   <section class="panel">
     <h2>Thêm đầu bếp</h2>
     <form action="/admin/chefs" method="POST" enctype="multipart/form-data" class="form-stack">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="field"><label for="name">Tên đầu bếp</label><input id="name" type="text" name="name" value="<%= formData.name || '' %>" required></div>
       <div class="field"><label for="specialty">Chuyên môn</label><input id="specialty" type="text" name="specialty" value="<%= formData.specialty || '' %>" required></div>
       <div class="field">

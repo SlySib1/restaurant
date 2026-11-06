@@ -1,0 +1,15 @@
+<%- include('../partials/header', { title: title }) %>
+<section class="auth-shell auth-shell-single">
+  <div class="panel auth-card auth-message-card <%= tone === 'error' ? 'is-error' : '' %>">
+    <p class="eyebrow"><%= tone === 'error' ? 'Có lỗi xảy ra' : 'Thông báo' %></p>
+    <h1><%= heading %></h1>
+    <p><%= message %></p>
+
+    <% if (typeof links !== 'undefined' && links && links.length) { %>
+      <div class="button-row">
+        <% links.forEach(link => { %><a class="button <%= link.variant === 'secondary' ? 'button-secondary' : '' %>" href="<%= link.href %>"><%= link.label %></a><% }) %>
+      </div>
+    <% } %>
+  </div>
+</section>
+<%- include('../partials/footer') %>

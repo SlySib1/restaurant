@@ -1,0 +1,66 @@
+<%- include('../partials/header', { title: 'Đăng ký' }) %>
+<section class="auth-shell">
+  <div class="auth-intro">
+    <p class="eyebrow">Thành viên Bếp Nhà</p>
+    <h1>Tạo tài khoản để giữ trọn hương vị nhà.</h1>
+    <p class="page-intro">Đăng ký một lần để lưu món yêu thích, theo dõi thực đơn mới và nhận ưu đãi từ căn bếp. Chúng tôi chỉ dùng email để xác minh tài khoản và bảo vệ quyền truy cập của bạn.</p>
+    <ul class="auth-points">
+      <li>Mật khẩu được băm bằng bcrypt, không ai đọc được mật khẩu gốc.</li>
+      <li>Email được xác minh bằng mã OTP dùng một lần.</li>
+      <li>Phiên đăng nhập nằm trong cookie httpOnly, lưu ở server.</li>
+    </ul>
+  </div>
+
+  <div class="panel auth-card">
+    <p class="eyebrow">Bước 1 / 2</p>
+    <h2>Đăng ký tài khoản</h2>
+    <p class="hint">Sau khi gửi biểu mẫu, bạn sẽ nhận mã xác minh gồm 6 chữ số qua email.</p>
+
+    <% if (errors && errors.length) { %>
+      <div class="error-box" role="alert">
+        <% errors.forEach(error => { %><p><%= error %></p><% }) %>
+      </div>
+    <% } %>
+
+    <form class="form-stack" action="/auth/register" method="POST" novalidate>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+      <div class="field">
+        <label for="name">Họ và tên</label>
+        <input id="name" type="text" name="name" value="<%= formData.name || '' %>" maxlength="60" required autocomplete="name">
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" value="<%= formData.email || '' %>" maxlength="254" required autocomplete="email">
+      </div>
+
+      <div class="field">
+        <label for="password">Mật khẩu</label>
+        <input id="password" type="password" name="password" minlength="8" maxlength="72" required autocomplete="new-password">
+        <p class="hint">Ít nhất 8 ký tự, có cả chữ và số.</p>
+      </div>
+
+      <div class="field">
+        <label for="confirmPassword">Nhập lại mật khẩu</label>
+        <input id="confirmPassword" type="password" name="confirmPassword" minlength="8" maxlength="72" required autocomplete="new-password">
+      </div>
+
+      <div class="field">
+        <label for="captcha">Mã xác nhận</label>
+        <div class="captcha-row">
+          <input id="captcha" type="text" name="captcha" maxlength="5" required autocomplete="off" inputmode="latin" spellcheck="false" aria-describedby="captcha-hint">
+          <img class="captcha-image" src="/auth/captcha.svg" alt="Hình chứa mã xác nhận" width="190" height="64">
+          <button type="button" class="button button-secondary button-small" data-captcha-refresh>Đổi mã</button>
+        </div>
+        <p id="captcha-hint" class="hint">Nhập các ký tự trong hình. Mã chỉ dùng một lần và hết hạn sau vài phút.</p>
+      </div>
+
+      <div class="button-row">
+        <button type="submit">Tạo tài khoản</button>
+        <a class="button button-secondary" href="/auth/login">Đã có tài khoản</a>
+      </div>
+    </form>
+  </div>
+</section>
+<%- include('../partials/footer') %>

@@ -38,3 +38,60 @@ model Ingredient {
   createdAt DateTime @default(now())
   dishes    Dish[]   @relation("DishIngredients")
 }
+
+model User {
+  id                  String   @id @default(cuid())
+  name                String
+  email               String   @unique
+  passwordHash        String
+  role                String   @default("customer")
+  avatarUrl           String?
+  emailVerifiedAt     DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  sessions            Session[]
+  verificationTokens  EmailVerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+// Phiên đăng nhập lưu trong database, không lưu token trong localStorage/sessionStorage.
+model Session {
+  id        String   @id
+  userId    String?
+  data      String   @db.Text
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// OTP xác minh email khi đăng ký: chỉ lưu hash của mã, không lưu mã gốc.
+model EmailVerificationToken {
+  id         String    @id @default(cuid())
+  userId     String
+  codeHash   String
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// Token đặt lại mật khẩu: link gửi qua email chỉ chứa token gốc, DB lưu hash SHA-256.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}

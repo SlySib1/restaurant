@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const { uploadImage, imageUrlForUpload, deleteImage } = require('./imageUpload');
+const { csrfProtectAfterUpload } = require('../lib/authMiddleware');
 const { parseIds, loadDishOptions, relationsAreValid } = require('./dishRelations');
 const prisma = new PrismaClient();
 
@@ -18,7 +19,7 @@ router.get('/', async (req, res) => {
   });
 });
 
-router.post('/', uploadImage, async (req, res) => {
+router.post('/', uploadImage, csrfProtectAfterUpload, async (req, res) => {
   const { name, description, price, category, available } = req.body;
   const imageUrl = imageUrlForUpload(req.file);
   const chefIds = parseIds(req.body.chefIds);
@@ -87,7 +88,7 @@ router.get('/:id/edit', async (req, res) => {
   });
 });
 
-router.patch('/:id', uploadImage, async (req, res) => {
+router.patch('/:id', uploadImage, csrfProtectAfterUpload, async (req, res) => {
   const id = parseInt(req.params.id);
   const uploadedImageUrl = imageUrlForUpload(req.file);
   if (isNaN(id)) {

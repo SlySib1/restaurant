@@ -1,0 +1,51 @@
+<%- include('../partials/header', { title: 'Đăng nhập' }) %>
+<section class="auth-shell">
+  <div class="auth-intro">
+    <p class="eyebrow">Chào mừng trở lại</p>
+    <h1>Đăng nhập để tiếp tục bữa ăn của bạn.</h1>
+    <p class="page-intro">Phiên đăng nhập được giữ trong cookie httpOnly và lưu phía server, nên không có token nào nằm trong localStorage hay sessionStorage.</p>
+    <ul class="auth-points">
+      <li>Thông báo lỗi luôn chung chung để không tiết lộ tài khoản nào tồn tại.</li>
+      <li>Sai quá nhiều lần sẽ tạm bị giới hạn theo địa chỉ mạng.</li>
+    </ul>
+  </div>
+
+  <div class="panel auth-card">
+    <p class="eyebrow">Thành viên</p>
+    <h2>Đăng nhập</h2>
+
+    <% if (errors && errors.length) { %>
+      <div class="error-box" role="alert">
+        <% errors.forEach(error => { %><p><%= error %></p><% }) %>
+      </div>
+    <% } %>
+
+    <form class="form-stack" action="/auth/login" method="POST" novalidate>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="next" value="<%= next || '' %>">
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" value="<%= formData.email || '' %>" maxlength="254" required autocomplete="email" autofocus>
+      </div>
+
+      <div class="field">
+        <label for="password">Mật khẩu</label>
+        <input id="password" type="password" name="password" maxlength="72" required autocomplete="current-password">
+      </div>
+
+      <div class="check-row">
+        <input id="rememberMe" type="checkbox" name="rememberMe">
+        <label for="rememberMe">Ghi nhớ đăng nhập 30 ngày</label>
+      </div>
+
+      <div class="button-row">
+        <button type="submit">Đăng nhập</button>
+        <a class="button button-secondary" href="/auth/register">Tạo tài khoản</a>
+      </div>
+
+      <p class="hint"><a href="/auth/forgot-password">Quên mật khẩu?</a></p>
+    </form>
+  </div>
+</section>
+<%- include('../partials/footer') %>
