@@ -61,6 +61,7 @@ app.set('views', path.join(__dirname, 'views'));
 // Import Routers
 const authRouter = require('./routes/auth');
 const userRouter = require('./routes/user');
+const catalogRouter = require('./routes/catalog');
 const adminDishRouter = require('./routes/adminDishes');
 const adminChefRouter = require('./routes/adminChefs');
 const adminIngredientRouter = require('./routes/adminIngredients');
@@ -68,6 +69,7 @@ const adminIngredientRouter = require('./routes/adminIngredients');
 // Routes
 app.use('/auth', authRouter);
 app.use('/dishes', userRouter);
+app.use('/', catalogRouter);
 // Toàn bộ khu vực quản trị yêu cầu đăng nhập với quyền admin (xem, thêm, sửa, xoá).
 app.use('/admin/dishes', requireAdmin, adminDishRouter);
 app.use('/admin/chefs', requireAdmin, adminChefRouter);

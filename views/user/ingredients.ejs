@@ -1,0 +1,25 @@
+<%- include('../partials/header', { title: 'Nguyên liệu' }) %>
+<p class="eyebrow">Tươi ngon mỗi ngày</p>
+<h1>Nguyên liệu</h1>
+<p class="page-intro">Khám phá những nguyên liệu được sử dụng trong các món ăn của chúng tôi.</p>
+
+<% if (ingredients.length === 0) { %>
+  <div class="panel empty-state">Chưa có nguyên liệu nào trong danh sách.</div>
+<% } else { %>
+  <div class="dish-grid">
+    <% ingredients.forEach(ingredient => { %>
+      <article class="dish-card">
+        <% if (ingredient.imageUrl) { %><img class="image-preview" src="<%= ingredient.imageUrl %>" alt="<%= ingredient.name %>">
+        <% } else { %><div class="image-preview image-placeholder" aria-label="Chưa có ảnh">Bếp Nhà</div><% } %>
+        <div class="dish-card-body">
+          <h2><%= ingredient.name %></h2>
+          <p>Đơn vị tính: <%= ingredient.unit %></p>
+          <% if (ingredient.dishes.length > 0) { %>
+            <p>Sử dụng trong: <%= ingredient.dishes.map(dish => dish.name).join(', ') %></p>
+          <% } %>
+        </div>
+      </article>
+    <% }) %>
+  </div>
+<% } %>
+<%- include('../partials/footer') %>

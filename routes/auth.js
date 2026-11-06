@@ -473,20 +473,12 @@ router.get('/logout', (req, res) => {
   });
 });
 
-router.post('/logout', async (req, res, next) => {
-  const store = req.app.locals.sessionStore;
-  try {
-    if (store && typeof store.destroyAllForUser === 'function' && req.session.userId) {
-      await store.destroyAllForUser(req.session.userId);
-    }
-    return req.session.destroy((error) => {
-      if (error) return next(error);
-      res.clearCookie('bepnha.sid', { path: '/' });
-      return res.redirect(303, '/dishes');
-    });
-  } catch (error) {
-    return next(error);
-  }
+router.post('/logout', (req, res, next) => {
+  return req.session.destroy((error) => {
+    if (error) return next(error);
+    res.clearCookie('bepnha.sid', { path: '/' });
+    return res.redirect(303, '/dishes');
+  });
 });
 
 // ---- Quên mật khẩu ----

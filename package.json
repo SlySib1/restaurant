@@ -9,6 +9,7 @@
     "prisma": "node scripts/prisma.js",
     "seed": "node scripts/prisma.js db seed",
     "make:admin": "node scripts/make-admin.js",
+    "mail:verify": "node scripts/verify-mail.js",
     "catalog:images": "node scripts/add-catalog-images.js"
   },
   "keywords": [],

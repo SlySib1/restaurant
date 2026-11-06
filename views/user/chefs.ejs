@@ -1,0 +1,25 @@
+<%- include('../partials/header', { title: 'Đầu bếp' }) %>
+<p class="eyebrow">Đội ngũ của Bếp Nhà</p>
+<h1>Đầu bếp</h1>
+<p class="page-intro">Gặp gỡ những người tạo nên hương vị cho từng món ăn.</p>
+
+<% if (chefs.length === 0) { %>
+  <div class="panel empty-state">Chưa có đầu bếp nào trong danh sách.</div>
+<% } else { %>
+  <div class="dish-grid">
+    <% chefs.forEach(chef => { %>
+      <article class="dish-card">
+        <% if (chef.imageUrl) { %><img class="image-preview" src="<%= chef.imageUrl %>" alt="<%= chef.name %>">
+        <% } else { %><div class="image-preview image-placeholder" aria-label="Chưa có ảnh">Bếp Nhà</div><% } %>
+        <div class="dish-card-body">
+          <h2><%= chef.name %></h2>
+          <p><%= chef.specialty %></p>
+          <% if (chef.dishes.length > 0) { %>
+            <p>Món phụ trách: <%= chef.dishes.map(dish => dish.name).join(', ') %></p>
+          <% } %>
+        </div>
+      </article>
+    <% }) %>
+  </div>
+<% } %>
+<%- include('../partials/footer') %>

@@ -11,12 +11,10 @@
   <nav class="site-nav">
     <a class="brand" href="/dishes">Bếp<span>Nhà</span></a>
     <div class="nav-links">
-      <a href="/dishes">Thực đơn</a>
-      <% if (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'admin') { %>
-        <a href="/admin/dishes">Món ăn</a>
-        <a href="/admin/chefs">Đầu bếp</a>
-        <a href="/admin/ingredients">Nguyên liệu</a>
-      <% } %>
+      <% const isAdmin = typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'admin'; %>
+      <a href="<%= isAdmin ? '/admin/dishes' : '/dishes' %>">Món ăn</a>
+      <a href="<%= isAdmin ? '/admin/chefs' : '/chefs' %>">Đầu bếp</a>
+      <a href="<%= isAdmin ? '/admin/ingredients' : '/ingredients' %>">Nguyên liệu</a>
     </div>
     <div class="nav-auth">
       <% if (typeof currentUser !== 'undefined' && currentUser) { %>

@@ -194,6 +194,7 @@ async function main() {
       emailVerifiedAt: new Date()
     },
     update: {
+      name: sampleUser.name,
       passwordHash: samplePasswordHash,
       role: sampleUser.role,
       emailVerifiedAt: new Date()
