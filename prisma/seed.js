@@ -1,5 +1,13 @@
 const { PrismaClient } = require('@prisma/client');
+const { hashPassword } = require('../lib/security');
 const prisma = new PrismaClient();
+
+const sampleUser = {
+  name: 'Tài khoản mẫu',
+  email: 'exam1@gmail.com',
+  password: 'examexam11',
+  role: 'admin'
+};
 
 const chefs = [
   { name: 'Gordon Ramsay', specialty: 'Món Âu, bít tết và nước sốt' },
@@ -174,6 +182,24 @@ async function main() {
       throw new Error(`Dữ liệu liên kết của món "${recipe.name}" chưa đầy đủ.`);
     }
   }
+
+  const samplePasswordHash = await hashPassword(sampleUser.password);
+  await prisma.user.upsert({
+    where: { email: sampleUser.email },
+    create: {
+      name: sampleUser.name,
+      email: sampleUser.email,
+      passwordHash: samplePasswordHash,
+      role: sampleUser.role,
+      emailVerifiedAt: new Date()
+    },
+    update: {
+      passwordHash: samplePasswordHash,
+      role: sampleUser.role,
+      emailVerifiedAt: new Date()
+    }
+  });
+  console.log(`Đã đồng bộ tài khoản đăng nhập mẫu: ${sampleUser.email}`);
 
   const chefRecords = await ensureNamedRecords(prisma.chef, chefs);
   const ingredientRecords = await ensureNamedRecords(prisma.ingredient, ingredients);

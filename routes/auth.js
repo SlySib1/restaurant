@@ -39,11 +39,21 @@ const OTP_MAX_PER_HOUR = 5;
 const RESET_TTL_MINUTES = Math.round(RESET_TOKEN_TTL_MS / 60000);
 const OTP_TTL_MINUTES = Math.round(OTP_TTL_MS / 60000);
 const GENERIC_REGISTER_MESSAGE =
-  'Nếu email hợp lệ và chưa được sử dụng, chúng tôi đã gửi một mã xác minh. Hãy kiểm tra hộp thư (cả mục Spam).';
+  'Nếu email hợp lệ và chưa được sử dụng, chúng tôi đã gửi mã xác minh. Hãy kiểm tra hộp thư (cả mục Spam).';
 const GENERIC_FORGOT_MESSAGE =
   'Nếu email này có tài khoản, chúng tôi đã gửi một liên kết đặt lại mật khẩu. Liên kết chỉ dùng được một lần và sẽ hết hạn sau ít phút.';
 // Hash giả để thời gian phản hồi của trang đăng nhập không tiết lộ email có tồn tại hay không.
 const TIMING_EQUALIZER_HASH = '$2b$12$9ojQ82EEuwbhSSliUY7MHucNuajLBiFqpzdhdwwKWRx.LnGoqpizy';
+
+function emailDeliveryFailure(res, links) {
+  return res.status(503).render('auth/message', {
+    title: 'Không gửi được email',
+    heading: 'Chưa thể gửi email xác minh',
+    message: 'Tài khoản chưa được xác minh vì email chưa gửi được. Vui lòng thử lại sau hoặc liên hệ quản trị viên để kiểm tra cấu hình SMTP.',
+    tone: 'error',
+    links
+  });
+}
 
 function safeNextPath(value) {
   const target = typeof value === 'string' ? value : '';
@@ -80,7 +90,7 @@ function baseUrl(req) {
 
 async function issueVerificationOtp(user) {
   const otp = randomOtp();
-  await prisma.$transaction([
+  const [, token] = await prisma.$transaction([
     // Mã cũ chưa dùng hết hiệu lực ngay khi phát hành mã mới.
     prisma.emailVerificationToken.updateMany({
       where: { userId: user.id, consumedAt: null },
@@ -104,6 +114,17 @@ async function issueVerificationOtp(user) {
     });
   } catch (error) {
     console.error('Không gửi được email xác minh:', error.message);
+    try {
+      await prisma.emailVerificationToken.update({
+        where: { id: token.id },
+        data: { consumedAt: new Date() }
+      });
+    } catch (cleanupError) {
+      console.error('Không thể vô hiệu hóa mã xác minh chưa gửi:', cleanupError.message);
+    }
+    const deliveryError = new Error('Không gửi được email xác minh.');
+    deliveryError.name = 'EmailDeliveryError';
+    throw deliveryError;
   }
   return otp;
 }
@@ -172,11 +193,26 @@ router.post('/register', registerLimiter, async (req, res, next) => {
     } else {
       // Role do server quyết định từ ADMIN_EMAILS, không nhận từ biểu mẫu.
       user = await prisma.user.create({
-        data: { name, email, passwordHash, role: roleForEmail(email) }
+        data: {
+          name,
+          email,
+          passwordHash,
+          role: roleForEmail(email)
+        }
       });
     }
 
-    await issueVerificationOtp(user);
+    try {
+      await issueVerificationOtp(user);
+    } catch (error) {
+      if (error.name === 'EmailDeliveryError') {
+        return emailDeliveryFailure(res, [
+          { href: '/auth/register', label: 'Thử đăng ký lại' },
+          { href: '/auth/login', label: 'Đi tới đăng nhập', variant: 'secondary' }
+        ]);
+      }
+      throw error;
+    }
 
     await regenerateSession(req);
     req.session.pendingUserId = user.id;
@@ -318,7 +354,7 @@ router.post('/resend-otp', resendOtpLimiter, async (req, res, next) => {
     }
 
     const latest = await prisma.emailVerificationToken.findFirst({
-      where: { userId: user.id },
+      where: { userId: user.id, consumedAt: null },
       orderBy: { createdAt: 'desc' }
     });
     const createdInLastHour = await prisma.emailVerificationToken.count({
@@ -346,7 +382,17 @@ router.post('/resend-otp', resendOtpLimiter, async (req, res, next) => {
       });
     }
 
-    await issueVerificationOtp(user);
+    try {
+      await issueVerificationOtp(user);
+    } catch (error) {
+      if (error.name === 'EmailDeliveryError') {
+        return emailDeliveryFailure(res, [
+          { href: '/auth/verify-otp', label: 'Quay lại nhập mã' },
+          { href: '/auth/login', label: 'Đăng nhập', variant: 'secondary' }
+        ]);
+      }
+      throw error;
+    }
     flash(req, 'success', 'Mã xác minh mới đã được gửi tới email của bạn.');
     return res.redirect(303, '/auth/verify-otp');
   } catch (error) {
@@ -379,11 +425,21 @@ router.post('/login', loginLimiter, async (req, res, next) => {
     }
 
     if (!user.emailVerifiedAt) {
+      try {
+        await issueVerificationOtp(user);
+      } catch (error) {
+        if (error.name === 'EmailDeliveryError') {
+          return emailDeliveryFailure(res, [
+            { href: '/auth/login', label: 'Thử đăng nhập lại' },
+            { href: '/auth/register', label: 'Đăng ký', variant: 'secondary' }
+          ]);
+        }
+        throw error;
+      }
       await regenerateSession(req);
       req.session.pendingUserId = user.id;
-      flash(req, 'error', 'Tài khoản chưa được xác minh. Chúng tôi vừa gửi mã xác minh mới.');
+      flash(req, 'success', 'Tài khoản chưa được xác minh. Chúng tôi đã gửi mã xác minh mới.');
       await saveSession(req);
-      await issueVerificationOtp(user);
       return res.redirect(303, '/auth/verify-otp');
     }
 
